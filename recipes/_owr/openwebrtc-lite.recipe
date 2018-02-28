@@ -1,0 +1,37 @@
+# -*- Mode: Python -*- vi:si:et:sw=4:sts=4:ts=4:syntax=python
+#from cerbero.tools.libtool import LibtoolLibrary
+
+import platform
+class Recipe(recipe.Recipe):
+    name = 'openwebrtc-lite'
+    version = '0.3.4'
+
+    remotes = {'origin': 'https://github.com/Mingyiz/openwebrtc.git'}
+
+    commit = 'v%s'%version
+
+    btype = BuildType.AUTOCMAKE
+    
+   
+    # Dependencies used in the dynamic (shared) build of OWRTC
+    _dynamic_deps = ['libnice', 'gstreamer-1.0','gst-plugins-base-1.0',
+                     'gst-plugins-good-1.0', 'gst-plugins-bad-1.0',
+                     'openwebrtc-gst-plugins']
+
+    # Dependencies used only in the static build of OWRTC
+    _static_deps = _dynamic_deps + ['openwebrtc-girepository']
+    deps = ['gettext', 'glib', 'libffi', 'gtk-doc-lite'] + \
+           _dynamic_deps
+
+    platform_deps = {Platform.WINDOWS: ['json-glib', 'libsoup'],
+                     Platform.DARWIN: ['json-glib', 'libsoup'],
+                     Platform.LINUX: ['json-glib', 'libsoup','pulseaudio'],
+                     Platform.IOS: _static_deps,
+                     Platform.ANDROID: _static_deps + ['gnustl']}
+
+
+    files_libs = ['libopenwebrtc_gst-lite','libopenwebrtc-lite-0.3']
+    files_devel = ['include/owr', 'lib/pkgconfig/openwebrtc-lite-0.3.pc',
+                   'lib/pkgconfig/openwebrtc-gst-lite-0.3.pc']
+
+

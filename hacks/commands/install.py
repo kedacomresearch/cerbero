@@ -118,7 +118,9 @@ class Installer(Command):
         elif self.args.no_deps:
             packages = [name]
         else:
-            packages = [name].extend( profile['deps'] )
+            packages = [name]
+            for k ,v in profile.get('deps',{}).viewitems():
+                packages.append(k)
 
         cats = ['runtime','devel']
         if self.args.no_devel:
