@@ -1,0 +1,38 @@
+# -*- Mode: Python -*- vi:si:et:sw=4:sts=4:ts=4:syntax=python
+
+class Recipe(recipe.Recipe):
+    name = 'libnice'
+    version = '0.1.14-1'
+    stype = SourceType.GIT
+    remotes = { 'origin' : 'https://github.com/libnice/libnice.git'     }
+    commit = 'fb2f1f77a31baa91968fc81c205f980b6913f403'
+    licenses = [License.LGPLv2_1Plus, License.MPLv1_1]
+    configure_options = ' --enable-static --enable-shared --with-gstreamer \
+            --without-gstreamer-0.10 --enable-compile-warnings=maximum \
+            --disable-gtk-doc --disable-gtk-doc-html'
+    deps = ['glib', 'gtk-doc-lite', 'gstreamer-1.0']
+    autoreconf = True
+    patches = [
+        "libnice/0001-EMSGSIZE-and-ETIMEDOUT-missing-in-windows.patch",
+        "libnice/0001-missing-nice_RAND_nonce-in-mingw.patch",
+        "libnice/0001-missing-gtk-doc.patch",
+        "libnice/0001-nicesrc-spin-the-agent-mainloop-in-a-separate-thread.patch"
+    ]
+
+    files_bins = ['stunbdc', 'stund']
+    files_libs = ['libnice']
+    files_devel = [
+        'include/nice',
+        'include/stun',
+        'lib/pkgconfig/nice.pc',
+    ]
+    files_plugins_net = ['lib/gstreamer-1.0/libgstnice%(mext)s']
+    # FIXME - if_arp.h? (iOS)
+
+    def configure(self):
+        # Only build the shared gst plugin in this recipe.
+        # We do need the static libnice.a library, though,
+        # so we don't use --disable-static
+        shell.replace(os.path.join(self.build_dir, 'gst', 'Makefile.am'),
+                      {'-module': '-shared -module'})
+        super(Recipe, self).configure()
