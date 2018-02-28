@@ -1,0 +1,23 @@
+# vi:si:et:sw=4:sts=4:ts=4:syntax=python
+# -*- Mode: Python -*-
+
+
+class Package( package.Package):
+
+    url = "http://gstreamer.freedesktop.org"
+    version = '0.7.0'
+    vendor = 'OpenWebRTC Project'
+    licenses = [License.LGPL]
+    org = 'org.freedesktop.gstreamer'
+	
+    name = 'openwebrtc-lite'
+    shortdesc = 'Open WebRTC'
+    longdesc = 'Open WebRTC'
+    deps = ['gstreamer-1.0']
+
+    files = ['libusrsctp:libs', 'openwebrtc-gst-plugins:libs', 'openwebrtc-lite:libs'
+            ]
+
+    platform_files = {
+            Platform.LINUX: ['pulseaudio:libs','sndfile']
+    }
