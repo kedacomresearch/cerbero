@@ -101,8 +101,7 @@ class Package(object):
             tarball[TNAME[ptype]]={
                 'filename':t._get_name(ptype)
             }
-        
-        return {
+        profile = {
             'name':package.name,
             'version':package.version,
             'platform':self.config.target_platform,
@@ -114,6 +113,10 @@ class Package(object):
             #'direct.deps': [p.name for p in self.store.get_package_deps(package.name, False)],
             'tarball': tarball
         }
+
+        if self.config.build_type == 'debug':
+            profile['debug'] = True
+        return profile
 
     def get(self,name):
         if self.packages_ is None:

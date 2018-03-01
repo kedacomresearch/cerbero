@@ -119,7 +119,7 @@ class Installer(Command):
             packages = [name]
         else:
             packages = [name]
-            for k ,v in profile.get('deps',{}).viewitems():
+            for k ,v in profile.get('dependencies',{}).viewitems():
                 packages.append(k)
 
         cats = ['runtime','devel']
@@ -128,6 +128,38 @@ class Installer(Command):
 
         for pkg in packages:
             self._unpack( pkg , cats )
+
+
+    def _cache_bundle(self,path):
+        bundle = yaml.load( open(path))
+        packages = bundle['packages']
+
+        platform = self.config.target_platform
+        arch = self.config.target_arch
+
+        for name, pkg in bundle['packages'].viewitems():
+            profile = pkg.get('profile',None)
+
+            if profile:                
+                for name in profile.get(platform,{}).get(arch ,[]):
+                    url = os.path.join(self.args.repo,name)
+
+                    path = cache( url, self.args.cache_dir )
+
+                    p = yaml.load( open(path) )
+                    pkgname = p['name']
+                    p['__dir__'] = self.args.repo
+                    if self.config.build_type == 'debug':
+                        if p.get('debug',False):
+                            self.profile[pkgname] = p
+                        else:
+                            if self.profile.get(pkgname,None) is None:
+                                self.profile[pkgname] = p
+                    else:
+                        if not p.get('debug',False):
+                            self.profile[pkgname] = p
+            else:
+                assert(0)
 
 
 
@@ -151,18 +183,28 @@ class Installer(Command):
                 else:
                     self.profile[profile['name']] = profile
         else:
-            assert (0)
-            url  = os.path.join( args.repo , 'bundle.yaml' )
-            path = cache( url, args.cache_dir )
+            
+            url  = os.path.join( self.args.repo , 'bundle.yaml' )
+            path = cache( url, self.args.cache_dir )
+            self._cache_bundle(path)
+            
 
     def _unpack(self,name, cats=['devel','runtime'], version = None):
         profile = self.profile[name]
-        ppath = profile.get('__file__',None)
-        if ppath is None or not os.path.exists( ppath ):
-            m.error('package <%s> not exists!'%name)
-            raise FatalError('install package failed')
+        #ppath = profile.get('__file__',None)
+        #if ppath is None or not os.path.exists( ppath ):
+        #    m.error('package <%s> not exists!'%name)
+        #    raise FatalError('install package failed')
 
-        d = os.path.dirname(profile['__file__'])
+        path = profile.get('__file__',None)
+        if path:
+            if not os.path.exists(path):
+                m.error('package <%s> not exists!'%name)
+                raise FatalError('install package failed')
+            d = os.path.dirname(profile['__file__'])
+        else:
+            d = profile.get('__dir__',None)
+        assert d,'!!!!!!!'
 
         prefix = self.args.prefix
         if prefix is None:
@@ -176,7 +218,7 @@ class Installer(Command):
         if os.path.exists( ip ):
             pro = yaml.load(open(ip))
             if version:
-                m.errors('installed package %s version %s not consistent with require %s'%(
+                m.error('installed package %s version %s not consistent with require %s'%(
                     name, pro['version'],version
                 ))
                 raise FatalError("install package failed.")
@@ -187,7 +229,8 @@ class Installer(Command):
         for cat,info in profile['tarball'].viewitems():
 
             filename = info['filename']
-            path = os.path.join( d , filename )
+            url = os.path.join( d , filename )
+            path = cache( url, self.args.cache_dir )
             assert os.path.exists(path)
 
             shell.unpack( path, prefix)
@@ -205,7 +248,8 @@ class Installer(Command):
         for name in args.name:
             if self.profile.get(name,None) is None \
                and  not self.args.deps_only:
-                raise FatalError("can not find package of %s from profiles."%name)
+               m.error("can not find package of %s from profiles."%name)
+               raise FatalError("can not find package of %s from profiles."%name)
             if name == 'build-tools':
                 self._build_tools()
             else:
